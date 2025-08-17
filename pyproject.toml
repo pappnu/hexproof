@@ -1,11 +1,19 @@
-[tool.poetry]
+[project]
 name = "hexproof"
 version = "0.3.7"
 description = "A comprehensive library of Magic the Gathering API utilities."
-authors = ["Investigamer <hexproofsystems@gmail.com>"]
+authors = [{ name = "Investigamer", email = "freethoughtleft@gmail.com" }]
 license = "MPL-2.0"
 readme = "README.md"
-keywords = ["hexproof", "mtg", "scryfall", "magic", "gathering", "api", "investigamer"]
+keywords = [
+    "hexproof",
+    "mtg",
+    "scryfall",
+    "magic",
+    "gathering",
+    "api",
+    "investigamer",
+]
 classifiers = [
     # Development status
     "Development Status :: 4 - Beta",
@@ -23,12 +31,12 @@ classifiers = [
     # Supported Python versions
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12"
+    "Programming Language :: Python :: 3.12",
 ]
-packages = [
-    {include = "hexproof"},
-    {include = "hexproof/py.typed"}
-]
+requires-python = ">=3.10,<4.0"
+
+[tool.poetry]
+packages = [{ include = "hexproof" }, { include = "hexproof/py.typed" }]
 
 [tool.poetry.urls]
 Changelog = "https://github.com/Investigamer/hexproof/blob/main/CHANGELOG.md"
@@ -38,20 +46,19 @@ Source = "https://github.com/Investigamer/hexproof"
 Sponsor = "https://patreon.com/mpcfill"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-requests = "^2.31.0"
-pydantic = ">=2.9.2"
-PyYAML = ">=6.0.1"
-tomlkit = ">=0.13.2"
-tomli = ">=2.0.2"
-loguru = "^0.7.2"
-omnitils = "^1.4.3"
+requests = "^2.32.4"
+pydantic = ">=2.11.7"
+PyYAML = ">=6.0.2"
+tomlkit = ">=0.13.3"
+tomli = ">=2.2.1"
+loguru = "^0.7.3"
+omnitils = { git = "https://github.com/pappnu/omnitils.git", branch = "dev" }
 bs4 = "^0.0.2"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.9.0"
-pytest = "^8.1.1"
-commitizen = "^3.20.0"
+mypy = "^1.17.1"
+pytest = "^8.4.1"
+commitizen = "^4.8.3"
 
 [build-system]
 requires = ["poetry-core"]
@@ -62,9 +69,7 @@ version = "0.3.7"
 encoding = "utf-8"
 tag_format = "$major.$minor.$patch"
 update_changelog_on_bump = true
-version_files = [
-    "pyproject.toml:version"
-]
+version_files = ["pyproject.toml:version"]
 
 [tool.poetry.scripts]
 hexproof = 'hexproof._cli:HexproofCLI'
