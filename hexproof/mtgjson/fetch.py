@@ -2,25 +2,27 @@
 * MTGJSON Request Handling
 """
 import os
-# Standard Library Imports
-from typing import Callable, Optional
 from pathlib import Path
+from typing import Callable, Optional
 
-# Third Party Imports
 import requests
 import yarl
-from ratelimit import sleep_and_retry, RateLimitDecorator
-from backoff import on_exception, expo
-from omnitils.fetch import request_header_default, download_file
+from backoff import expo, on_exception
+from limits import RateLimitItemPerHour, RateLimitItemPerSecond
+from limits.storage import MemoryStorage
+from limits.strategies import MovingWindowRateLimiter
+from omnitils.fetch import download_file, request_header_default
 from omnitils.files.archive import unpack_tar_gz
+from omnitils.rate_limit import rate_limit
 
-# Local Imports
-from hexproof.mtgjson.enums import MTGJsonURL
 from hexproof.mtgjson import schema as MTGJsonTypes
+from hexproof.mtgjson.enums import MTGJsonURL
 
 # Rate limiter to safely limit MTGJSON requests
-mtgjson_rate_limit = RateLimitDecorator(calls=20, period=1)
-mtgjson_gql_rate_limit = RateLimitDecorator(calls=20, period=1)
+_rate_limit_storage = MemoryStorage()
+_rate_limiter = MovingWindowRateLimiter(_rate_limit_storage)
+_mtgjson_rate_limit = RateLimitItemPerSecond(20)
+_mtgjson_gql_rate_limit = RateLimitItemPerHour(500)
 
 
 """
@@ -35,8 +37,7 @@ def request_handler_mtgjson(func) -> Callable:
         There are no known rate limits for requesting JSON file resources.
         We include a 20-per-second rate limit just to be nice.
     """
-    @sleep_and_retry
-    @mtgjson_rate_limit
+    @rate_limit(limiter=_rate_limiter, limit=_mtgjson_rate_limit)
     @on_exception(expo, requests.exceptions.RequestException, max_tries=2, max_time=1)
     def decorator(*args, **kwargs):
         return func(*args, **kwargs)
@@ -50,8 +51,7 @@ def request_handler_mtgjson_gql(func) -> Callable:
         MTGJSON GraphQL requests are capped at 500 per-hour per-token at the moment.
         https://mtgjson.com/mtggraphql/#rate-limits
     """
-    @sleep_and_retry
-    @mtgjson_gql_rate_limit
+    @rate_limit(limiter=_rate_limiter, limit=_mtgjson_gql_rate_limit)
     @on_exception(expo, requests.exceptions.RequestException, max_tries=2, max_time=1)
     def decorator(*args, **kwargs):
         return func(*args, **kwargs)

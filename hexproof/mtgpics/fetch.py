@@ -1,23 +1,26 @@
 """
 * MTGPics Data Requests
 """
-# Standard Libray Imports
 from typing import Callable, Optional
 
-# Third Party Imports
 import requests
 import yarl
 from backoff import expo, on_exception
+from limits import RateLimitItemPerSecond
+from limits.storage import MemoryStorage
+from limits.strategies import MovingWindowRateLimiter
 from omnitils.exceptions import return_on_exception
 from omnitils.fetch import request_header_default
-from ratelimit import sleep_and_retry, RateLimitDecorator
+from omnitils.rate_limit import rate_limit
 
 """
 * MTGPics Request Handlers
 """
 
-# Rate limiter to safely limit Scryfall requests
-mtgp_rate_limit = RateLimitDecorator(calls=20, period=1)
+# Rate limiter to safely limit MTGPics requests
+_rate_limit_storage = MemoryStorage()
+_rate_limiter = MovingWindowRateLimiter(_rate_limit_storage)
+_rate_limit = RateLimitItemPerSecond(20)
 
 
 def request_handler_mtgpics(func: Callable) -> Callable:
@@ -30,8 +33,7 @@ def request_handler_mtgpics(func: Callable) -> Callable:
         Wrapped function.
     """
 
-    @sleep_and_retry
-    @mtgp_rate_limit
+    @rate_limit(limiter=_rate_limiter, limit=_rate_limit)
     @on_exception(expo, requests.exceptions.RequestException, max_tries=2, max_time=1)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)

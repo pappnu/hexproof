@@ -1,25 +1,27 @@
 """
 * Scryfall Request Handling
 """
-# Third Party Imports
 from pathlib import Path
 from typing import Callable, Optional
 
-# Third Party Imports
 import requests
 import yarl
-from omnitils.fetch import request_header_default, download_file
+from backoff import expo, on_exception
+from limits import RateLimitItemPerSecond
+from limits.storage import MemoryStorage
+from limits.strategies import MovingWindowRateLimiter
+from omnitils.fetch import download_file, request_header_default
+from omnitils.rate_limit import rate_limit
 from omnitils.strings import normalize_str
-from ratelimit import sleep_and_retry, RateLimitDecorator
-from backoff import on_exception, expo
 from requests import RequestException
 
-# Local Imports
-from hexproof.scryfall.enums import ScryURL
 from hexproof.scryfall import schema as ScrySchema
+from hexproof.scryfall.enums import ScryURL
 
-# Rate limiter to safely limit MTGJSON requests
-scryfall_rate_limit = RateLimitDecorator(calls=20, period=1)
+# Rate limiter to safely limit Scryfall requests
+_rate_limit_storage = MemoryStorage()
+_rate_limiter = MovingWindowRateLimiter(_rate_limit_storage)
+_rate_limit = RateLimitItemPerSecond(20)
 
 
 """
@@ -42,8 +44,7 @@ def request_handler_scryfall(func) -> Callable:
     Returns:
         The wrapped function.
     """
-    @sleep_and_retry
-    @scryfall_rate_limit
+    @rate_limit(limiter=_rate_limiter, limit=_rate_limit)
     @on_exception(expo, RequestException, max_tries=2, max_time=1)
     def decorator(*args, **kwargs):
         return func(*args, **kwargs)
