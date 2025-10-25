@@ -231,6 +231,7 @@ class SetType(StrConstant):
     Core = 'core'
     Expansion = 'expansion'
     Masters = 'masters'
+    Eternal = 'eternal'
     Alchemy = 'alchemy'
     Masterpiece = 'masterpiece'
     Arsenal = 'arsenal'
