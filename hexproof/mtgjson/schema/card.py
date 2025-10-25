@@ -316,5 +316,3 @@ class CardToken(Schema):
 """
 
 Card = Union[CardAtomic, CardDeck, CardSet, CardSetDeck, CardToken]
-Card.__doc__ = ('A Card is a data structure with variations of Data Models that is found within files '
-                'that reference cards, and is not a Data Model itself.')
